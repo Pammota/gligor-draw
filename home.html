@@ -30,7 +30,7 @@
       var canvas = document.getElementById("canvas");
       var ctx = canvas.getContext("2d");
       var socket = new WebSocket(
-        "ws://" + document.domain + ":" + location.port + "/ws"
+        "wss://" + document.domain + ":" + location.port + "/ws"
       );
 
       var isDrawing = false;
