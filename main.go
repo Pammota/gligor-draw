@@ -36,7 +36,7 @@ func main() {
 	go handleMessages()
 
 	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", handleConnections)
+	http.HandleFunc("/wss", handleConnections)
 
 	log.Printf("Starting server on port %d...\n", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
