@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Collaborative Drawing</title>
+    <style>
+      #canvas {
+        border: 1px solid black;
+      }
+      :root {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Courier New", Courier, monospace;
+      }
+      .color-picker {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Gligor Draw</h1>
+    <div class="color-picker">
+      <label for="color">Choose a color:</label>
+      <input type="color" id="color" name="color" value="#000000" />
+      <button onclick="exportDrawing()">Export Drawing</button>
+      <button onclick="deleteDrawing()">Delete Drawing</button>
+    </div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <script>
+      var canvas = document.getElementById("canvas");
+      var ctx = canvas.getContext("2d");
+      var socket = new WebSocket(
+        "ws://" + document.domain + ":" + location.port + "/ws"
+      );
+
+      var isDrawing = false;
+      var lines = [];
+      var currentLine = [];
+      loadDrawing();
+
+      canvas.addEventListener("mousedown", startDrawing);
+      canvas.addEventListener("mouseup", stopDrawing);
+      canvas.addEventListener("mouseout", stopDrawing);
+      canvas.addEventListener("mousemove", draw);
+
+      socket.onmessage = function (event) {
+        var data = JSON.parse(event.data);
+        if (data.type === "draw") {
+          lines.push({ points: data.content, color: data.color });
+          redrawLines();
+
+          saveDrawing();
+        } else if (data.type === "clear") {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          lines = [];
+
+          localStorage.removeItem("drawingData");
+        }
+      };
+
+      function draw(e) {
+        if (!isDrawing) return;
+        var x = e.clientX - canvas.offsetLeft;
+        var y = e.clientY - canvas.offsetTop;
+        currentLine.push({ x: x, y: y });
+        redrawLines();
+
+        socket.send(
+          JSON.stringify({
+            type: "draw",
+            content: currentLine,
+            color: document.getElementById("color").value,
+          })
+        );
+      }
+
+      function startDrawing(e) {
+        isDrawing = true;
+        currentLine = [];
+        var x = e.clientX - canvas.offsetLeft;
+        var y = e.clientY - canvas.offsetTop;
+        currentLine.push({ x: x, y: y });
+      }
+
+      function stopDrawing() {
+        isDrawing = false;
+        lines.push({
+          points: currentLine,
+          color: document.getElementById("color").value,
+        });
+        currentLine = [];
+      }
+
+      function redrawLines() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        lines.forEach(function (line) {
+          if (line.points && line.points.length > 1) {
+            drawSmoothLine(line.points, line.color);
+          }
+        });
+      }
+      function drawSmoothLine(points, color) {
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        for (var i = 1; i < points.length; i++) {
+          var point = points[i];
+          ctx.lineTo(point.x, point.y);
+        }
+        ctx.stroke();
+      }
+
+      function saveDrawing() {
+        localStorage.setItem("drawingData", JSON.stringify(lines));
+      }
+
+      function loadDrawing() {
+        var drawingData = localStorage.getItem("drawingData");
+        if (drawingData) {
+          lines = JSON.parse(drawingData);
+
+          redrawLines();
+        }
+      }
+
+      function exportDrawing() {
+        if (lines.length === 0) {
+          console.log("No drawing to export.");
+          return;
+        }
+
+        // Create a temporary canvas with a white background
+        var tempCanvas = document.createElement("canvas");
+        var tempCtx = tempCanvas.getContext("2d");
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        tempCtx.fillStyle = "white";
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+        // Copy the drawing from the main canvas onto the temporary canvas
+        tempCtx.drawImage(canvas, 0, 0);
+
+        // Create a temporary link element
+        var link = document.createElement("a");
+        link.download = "drawing.jpg";
+        link.href = tempCanvas.toDataURL("image/jpeg", 1); // Convert canvas to JPEG image
+        link.click();
+      }
+
+      function deleteDrawing() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        localStorage.removeItem("drawingData");
+
+        socket.send(JSON.stringify({ type: "clear" }));
+      }
+
+      document.getElementById("color").addEventListener("change", function () {
+        localStorage.setItem("selectedColor", this.value);
+      });
+
+      var savedColor = localStorage.getItem("selectedColor");
+      if (savedColor) {
+        document.getElementById("color").value = savedColor;
+      }
+    </script>
+  </body>
+</html>
