@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -86,11 +87,15 @@ func handleMessages() {
 	for {
 		msg := <-broadcast
 		for conn := range connections {
-			err := conn.WriteJSON(msg)
-			if err != nil {
-				log.Printf("error: %v", err)
-				delete(connections, conn)
-				conn.Close()
+			if msg.Type == "ping" { // Reset the read deadline
+				conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
+			} else {
+				err := conn.WriteJSON(msg)
+				if err != nil {
+					log.Printf("error: %v", err)
+					delete(connections, conn)
+					conn.Close()
+				}
 			}
 		}
 	}

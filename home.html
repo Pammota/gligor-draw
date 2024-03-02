@@ -15,6 +15,13 @@
       .color-picker {
         margin-top: 10px;
       }
+
+      @media only screen and (max-width: 768px) {
+        /* For mobile phones: */
+        canvas {
+          transform: scale(0.5);
+        }
+      }
     </style>
   </head>
   <body>
@@ -36,14 +43,31 @@
       var isDrawing = false;
       var lines = [];
       var currentLine = [];
+      var isAppClosing = false;
       loadDrawing();
 
+      // Desktop
       canvas.addEventListener("mousedown", startDrawing);
       canvas.addEventListener("mouseup", stopDrawing);
       canvas.addEventListener("mouseout", stopDrawing);
       canvas.addEventListener("mousemove", draw);
 
+      // Mobile
+      canvas.addEventListener("touchend", stopDrawing);
+      canvas.addEventListener("touchcancel", stopDrawing);
+      canvas.addEventListener("touchstart", function (e) {
+        e.preventDefault();
+        var touch = e.touches[0];
+        startDrawing(touch);
+      });
+      canvas.addEventListener("touchmove", function (e) {
+        e.preventDefault();
+        var touch = e.touches[0];
+        draw(touch);
+      });
+
       socket.onmessage = function (event) {
+        // draw or clear whem message
         var data = JSON.parse(event.data);
         if (data.type === "draw") {
           lines.push({ points: data.content, color: data.color });
@@ -58,12 +82,39 @@
         }
       };
 
+      socket.onclose = function (e) {
+        if (!isAppClosing) {
+          console.log(
+            "Socket is closed. Reconnect will be attempted in 1 second.",
+            e.reason
+          );
+          setTimeout(function () {
+            connect();
+          }, 1000);
+        }
+      };
+
+      socket.onerror = function (err) {
+        console.error(
+          "Socket encountered error: ",
+          err.message,
+          "Closing socket"
+        );
+        socket.close();
+      };
+
       function draw(e) {
         if (!isDrawing) return;
-        var x = e.clientX - canvas.offsetLeft;
-        var y = e.clientY - canvas.offsetTop;
+        var x = e.pageX - canvas.offsetLeft;
+        var y = e.pageY - canvas.offsetTop;
+        // Draw the line segment from the last point to the new point
+        var lastPoint = currentLine[currentLine.length - 1];
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        // Push the new point to currentLine
         currentLine.push({ x: x, y: y });
-        redrawLines();
 
         socket.send(
           JSON.stringify({
@@ -77,8 +128,8 @@
       function startDrawing(e) {
         isDrawing = true;
         currentLine = [];
-        var x = e.clientX - canvas.offsetLeft;
-        var y = e.clientY - canvas.offsetTop;
+        var x = e.pageX - canvas.offsetLeft;
+        var y = e.pageY - canvas.offsetTop;
         currentLine.push({ x: x, y: y });
       }
 
@@ -164,6 +215,20 @@
       if (savedColor) {
         document.getElementById("color").value = savedColor;
       }
+
+      // PING mechanism
+      var pingInterval = setInterval(function () {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: "ping" }));
+        }
+      }, 60 * 1000); // 1 minute
+
+      // UNLOAD
+      window.addEventListener("beforeunload", function () {
+        isAppClosing = true;
+        clearInterval(pingInterval);
+        socket.close();
+      });
     </script>
   </body>
 </html>
