@@ -103,6 +103,12 @@
         socket.close();
       };
 
+      function connect() {
+        socket = new WebSocket(
+          "wss://" + document.domain + ":" + location.port + "/ws"
+        );
+      }
+
       function draw(e) {
         if (!isDrawing) return;
         var x = e.pageX - canvas.offsetLeft;
