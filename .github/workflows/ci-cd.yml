@@ -2,7 +2,7 @@ name: Docker Image CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -37,8 +37,9 @@ jobs:
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.DIETPI_IP }}
-        username: ${{ secrets.DIETPI_USER }} 
+        username: ${{ secrets.DIETPI_USER }}
         password: ${{ secrets.DIETPI_PASSWORD }}
+        port: 22
         script: |
           # Stop and remove old container
           docker stop my_container
