@@ -50,5 +50,5 @@ jobs:
           docker pull ${{ secrets.DOCKER_HUB_REPOSITORY }}
 
           # Run new container
-          docker run -d --name my_container ${{ secrets.DOCKER_HUB_REPOSITORY }}
+          docker run -d --name my_container -p 8080:8080 ${{ secrets.DOCKER_HUB_REPOSITORY }}
 
