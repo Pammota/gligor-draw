@@ -50,4 +50,4 @@ jobs:
             # Run new container
             docker run -d --name my_container -p 8080:8080 ${{ secrets.DOCKER_HUB_REPOSITORY }}
         run: |
-          cloudflared_ssh.sh $DIETPI_IP 22 $DIETPI_USER "$DIETPI_PASSWORD" "$SSH_SCRIPT"
+          ./cloudflared_ssh.sh $DIETPI_IP 22 $DIETPI_USER "$DIETPI_PASSWORD" "$SSH_SCRIPT"
