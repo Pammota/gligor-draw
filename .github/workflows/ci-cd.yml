@@ -36,8 +36,8 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apk update
-          sudo apk add openssh curl sshpass
+          sudo apt update
+          sudo apt install openssh curl sshpass
           curl -L https://github.com/cloudflare/cloudflared/releases/download/2023.7.3/cloudflared-linux-amd64 -o /usr/bin/cloudflared
           sudo chmod +x /usr/bin/cloudflared
           sudo mkdir /root/.ssh
