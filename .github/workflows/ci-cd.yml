@@ -44,9 +44,20 @@ jobs:
           sudo mkdir -p /root/.ssh
 
       - name: Copy and set permissions for script
+        env:
+          SH_SCRIPT: |
+            #!/bin/bash
+            echo "Host $1" >> /root/.ssh/config
+            echo "ProxyCommand cloudflared access ssh --hostname %h" >> /root/.ssh/config
+            ssh-keyscan $1 >> /root/.ssh/known_hosts
+            # Use sshpass to pass the password to ssh
+            sshpass -p "$4" ssh -o StrictHostKeyChecking=no $3@$1
+            # Use sshpass to pass the password to ssh and execute the command
+            sshpass -p "$4" ssh -o StrictHostKeyChecking=no $3@$1 -p $2 "$5"
         run: |
-          cp cloudflared_ssh.sh .github/
-          chmod +x .github/cloudflared_ssh.sh
+          touch cloudflared_ssh.sh
+          echo "$SH_SCRIPT" > cloudflared_ssh.sh
+          chmod +x cloudflared_ssh.sh
 
       - name: Cloudflared SSH Deploy
         env:
@@ -64,4 +75,4 @@ jobs:
             # Run new container
             docker run -d --name my_container -p 8080:8080 ${{ secrets.DOCKER_HUB_REPOSITORY }}
         run: |
-          .github/cloudflared_ssh.sh $DIETPI_IP 22 $DIETPI_USER "$DIETPI_PASSWORD" "$SSH_SCRIPT"
+          cloudflared_ssh.sh $DIETPI_IP 22 $DIETPI_USER "$DIETPI_PASSWORD" "$SSH_SCRIPT"
