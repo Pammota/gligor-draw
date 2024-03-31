@@ -37,8 +37,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl sshpass
-          curl -L https://github.com/cloudflare/cloudflared/releases/download/2023.7.3/cloudflared-linux-amd64 -o /usr/bin/cloudflared
+          sudo apt-get install -y sshpass curl
+          curl -L https://github.com/cloudflare/cloudflared/releases/download/2023.7.3/cloudflared-linux-amd64 -o cloudflared
+          sudo mv cloudflared /usr/bin/
           sudo chmod +x /usr/bin/cloudflared
           sudo mkdir /root/.ssh
 
