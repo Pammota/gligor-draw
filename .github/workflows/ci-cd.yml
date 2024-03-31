@@ -31,7 +31,7 @@ jobs:
           tags: ${{ secrets.DOCKER_HUB_REPOSITORY }}
 
   deploy:
-    depends: build
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
