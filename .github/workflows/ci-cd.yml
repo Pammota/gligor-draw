@@ -41,7 +41,7 @@ jobs:
           curl -L https://github.com/cloudflare/cloudflared/releases/download/2023.7.3/cloudflared-linux-amd64 -o cloudflared
           sudo mv cloudflared /usr/bin/
           sudo chmod +x /usr/bin/cloudflared
-          sudo mkdir /root/.ssh
+          sudo mkdir -p /root/.ssh
 
       - name: Copy and set permissions for script
         run: |
