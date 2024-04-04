@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -29,6 +30,7 @@ type Point struct {
 
 var connections = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Message)
+var mutex = sync.Mutex{}
 
 func main() {
 	port := flag.Int("port", 8080, "Port to listen on")
@@ -57,20 +59,25 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 	defer ws.Close()
 
+	mutex.Lock()
 	connections[ws] = true
+	mutex.Unlock()
 
 	for {
 		var msg Message
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			log.Printf("error: %v", err)
+			mutex.Lock()
 			delete(connections, ws)
+			mutex.Unlock()
 			break
 		}
 		switch msg.Type {
 		case "draw":
 			broadcast <- msg
 		case "clear":
+			mutex.Lock()
 			for conn := range connections {
 				err := conn.WriteJSON(msg)
 				if err != nil {
@@ -79,6 +86,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 					conn.Close()
 				}
 			}
+			mutex.Unlock()
 		}
 	}
 }
@@ -86,6 +94,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleMessages() {
 	for {
 		msg := <-broadcast
+		mutex.Lock()
 		for conn := range connections {
 			if msg.Type == "ping" { // Reset the read deadline
 				conn.SetReadDeadline(time.Now().Add(5 * time.Minute))
@@ -98,5 +107,6 @@ func handleMessages() {
 				}
 			}
 		}
+		mutex.Unlock()
 	}
 }
