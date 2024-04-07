@@ -33,23 +33,22 @@ var broadcast = make(chan Message)
 var mutex = sync.Mutex{}
 
 func main() {
-	port := flag.Int("port", 8080, "Port to listen on")
+	port := flag.Int("port", 8080, "\nWebsite available at http://localhost:8080")
 	flag.Parse()
 
 	go handleMessages()
 
-	http.HandleFunc("/", serveHome)
+	// http.HandleFunc("/", serveHome)
+
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
 	http.HandleFunc("/ws", handleConnections)
 
-	log.Printf("Starting server on port %d...\n", *port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
+	log.Printf("\nWebsite available at http://localhost:%d ", *port)
+	err := http.ListenAndServe(fmt.Sprintf("localhost:%d", *port), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-}
-
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "home.html")
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {

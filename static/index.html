@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Gligor Draw</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- <h1>Gligor Draw</h1> -->
+    <img src="/gligor-draw-logo.png" alt="gligor-draw-logo" />
+    <div class="actions-bar">
+      <div class="color-input">
+        <label for="color" id="color-label">Color</label>
+        <input type="color" id="color" name="color" value="#000000" />
+      </div>
+      <button onclick="exportDrawing()">Export Drawing</button>
+      <button onclick="deleteDrawing()">Delete Drawing</button>
+    </div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <script src="index.js"></script>
+  </body>
+</html>
