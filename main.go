@@ -45,7 +45,7 @@ func main() {
 	http.HandleFunc("/ws", handleConnections)
 
 	log.Printf("\nWebsite available at http://localhost:%d ", *port)
-	err := http.ListenAndServe(fmt.Sprintf("localhost:%d", *port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
